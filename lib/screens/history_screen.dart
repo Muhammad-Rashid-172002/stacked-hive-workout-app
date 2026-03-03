@@ -299,17 +299,17 @@ class _HistoryScreenState extends State<HistoryScreen> {
                               BorderRadius.circular(
                                   12),
                         ),
-                        child: Text(
-                          "${h.duration}s",
-                          style:
-                              const TextStyle(
-                            color: AppTheme
-                                .textPrimary,
-                            fontWeight:
-                                FontWeight.bold,
-                            fontSize: 12,
-                          ),
-                        ),
+                        // child: Text(
+                        //  // "${h.duration}s",
+                        //   style:
+                        //       const TextStyle(
+                        //     color: AppTheme
+                        //         .textPrimary,
+                        //     fontWeight:
+                        //         FontWeight.bold,
+                        //     fontSize: 12,
+                        //   ),
+                        // ),
                       ),
                     ],
                   ),

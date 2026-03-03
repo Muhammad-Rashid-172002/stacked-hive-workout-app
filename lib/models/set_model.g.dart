@@ -1,41 +1,38 @@
 // GENERATED CODE - DO NOT MODIFY BY HAND
 
-part of 'history_model.dart';
+part of 'set_model.dart';
 
 // **************************************************************************
 // TypeAdapterGenerator
 // **************************************************************************
 
-class HistoryModelAdapter extends TypeAdapter<HistoryModel> {
+class ExerciseSetAdapter extends TypeAdapter<ExerciseSet> {
   @override
-  final int typeId = 2;
+  final int typeId = 3;
 
   @override
-  HistoryModel read(BinaryReader reader) {
+  ExerciseSet read(BinaryReader reader) {
     final numOfFields = reader.readByte();
     final fields = <int, dynamic>{
       for (int i = 0; i < numOfFields; i++) reader.readByte(): reader.read(),
     };
-    return HistoryModel(
-      categoryName: fields[0] as String,
-      exerciseName: fields[1] as String,
-      date: fields[3] as DateTime,
-      notes: fields[4] as String,
+    return ExerciseSet(
+      weight: fields[0] as double,
+      reps: fields[1] as int,
+      completed: fields[2] as bool,
     );
   }
 
   @override
-  void write(BinaryWriter writer, HistoryModel obj) {
+  void write(BinaryWriter writer, ExerciseSet obj) {
     writer
-      ..writeByte(4)
-      ..writeByte(0)
-      ..write(obj.categoryName)
-      ..writeByte(1)
-      ..write(obj.exerciseName)
       ..writeByte(3)
-      ..write(obj.date)
-      ..writeByte(4)
-      ..write(obj.notes);
+      ..writeByte(0)
+      ..write(obj.weight)
+      ..writeByte(1)
+      ..write(obj.reps)
+      ..writeByte(2)
+      ..write(obj.completed);
   }
 
   @override
@@ -44,7 +41,7 @@ class HistoryModelAdapter extends TypeAdapter<HistoryModel> {
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
-      other is HistoryModelAdapter &&
+      other is ExerciseSetAdapter &&
           runtimeType == other.runtimeType &&
           typeId == other.typeId;
 }

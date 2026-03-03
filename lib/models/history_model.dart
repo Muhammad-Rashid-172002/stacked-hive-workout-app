@@ -9,8 +9,8 @@ class HistoryModel extends HiveObject {
   @HiveField(1)
   String exerciseName;
 
-  @HiveField(2)
-  int duration;
+  // @HiveField(2)
+  // int duration;
 
   @HiveField(3)
   DateTime date;
@@ -21,7 +21,7 @@ class HistoryModel extends HiveObject {
   HistoryModel({
     required this.categoryName,
     required this.exerciseName,
-    required this.duration,
+   // required this.duration,
     required this.date,
     required this.notes,
   });

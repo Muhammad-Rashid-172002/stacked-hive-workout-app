@@ -1,4 +1,5 @@
 import 'package:fitness_tracker_app/components/app_theme.dart';
+import 'package:fitness_tracker_app/models/set_model.dart';
 import 'package:flutter/material.dart';
 import 'package:fitness_tracker_app/models/exercise_model.dart';
 import 'package:fitness_tracker_app/models/category_model.dart';
@@ -7,13 +8,13 @@ import 'package:uuid/uuid.dart';
 
 class AddExerciseScreen extends StatefulWidget {
   final CategoryModel category;
-  final int? exerciseIndex;
   final Exercise? exercise;
+  final int categoryIndex;
 
   const AddExerciseScreen({
     super.key,
     required this.category,
-    this.exerciseIndex,
+    required this.categoryIndex,
     this.exercise,
   });
 
@@ -21,17 +22,16 @@ class AddExerciseScreen extends StatefulWidget {
   State<AddExerciseScreen> createState() => _AddExerciseScreenState();
 }
 
-class _AddExerciseScreenState extends State<AddExerciseScreen>
-    with SingleTickerProviderStateMixin {
+class _AddExerciseScreenState extends State<AddExerciseScreen> {
   final _formKey = GlobalKey<FormState>();
 
   late TextEditingController nameController;
-  late TextEditingController setsController;
-  late TextEditingController repsController;
-  late TextEditingController durationController;
   late TextEditingController notesController;
 
-  late AnimationController _btnController;
+  final List<TextEditingController> weightControllers = [];
+  final List<TextEditingController> repsControllers = [];
+
+  bool isSaving = false;
 
   @override
   void initState() {
@@ -39,291 +39,298 @@ class _AddExerciseScreenState extends State<AddExerciseScreen>
 
     nameController =
         TextEditingController(text: widget.exercise?.name ?? '');
-    setsController =
-        TextEditingController(text: widget.exercise?.sets.toString() ?? "3");
-    repsController =
-        TextEditingController(text: widget.exercise?.reps.toString() ?? "10");
-    durationController =
-        TextEditingController(text: widget.exercise?.duration.toString() ?? "60");
     notesController =
         TextEditingController(text: widget.exercise?.notes ?? '');
 
-    _btnController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 200),
-      lowerBound: 0.95,
-      upperBound: 1,
-      value: 1,
-    );
+    /// Load previous sets
+    if (widget.exercise != null) {
+      for (var set in widget.exercise!.sets) {
+        weightControllers
+            .add(TextEditingController(text: set.weight.toString()));
+        repsControllers
+            .add(TextEditingController(text: set.reps.toString()));
+      }
+    } else {
+      _addSet();
+    }
+  }
+
+  void _addSet() {
+    setState(() {
+      weightControllers.add(TextEditingController());
+      repsControllers.add(TextEditingController());
+    });
+  }
+
+  void _removeSet(int index) {
+    setState(() {
+      weightControllers[index].dispose();
+      repsControllers[index].dispose();
+      weightControllers.removeAt(index);
+      repsControllers.removeAt(index);
+    });
   }
 
   @override
   void dispose() {
     nameController.dispose();
-    setsController.dispose();
-    repsController.dispose();
-    durationController.dispose();
     notesController.dispose();
-    _btnController.dispose();
+    for (var c in weightControllers) c.dispose();
+    for (var c in repsControllers) c.dispose();
     super.dispose();
   }
 
-@override
-Widget build(BuildContext context) {
-  final isEditing = widget.exercise != null;
+  @override
+  Widget build(BuildContext context) {
+    final isEditing = widget.exercise != null;
 
-  return Scaffold(
-    backgroundColor: AppTheme.jetBlack,
-    body: SafeArea(
-      child: Column(
-        children: [
+    return Scaffold(
+      backgroundColor: AppTheme.jetBlack,
+      body: SafeArea(
+        child: Column(
+          children: [
 
-          /// 🔥 Dark Premium Header
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
-            decoration: const BoxDecoration(
-              gradient: LinearGradient(
-                colors: [AppTheme.primaryRed, AppTheme.accentRed],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
-              borderRadius: BorderRadius.only(
-                bottomLeft: Radius.circular(30),
-                bottomRight: Radius.circular(30),
-              ),
-            ),
-            child: Row(
-              children: [
-                GestureDetector(
-                  onTap: () => Navigator.pop(context),
-                  child: const CircleAvatar(
-                    backgroundColor: Colors.white24,
-                    child: Icon(Icons.arrow_back, color: Colors.white),
-                  ),
+            /// HEADER
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 22),
+              decoration: const BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [AppTheme.primaryRed, AppTheme.accentRed],
                 ),
-                const SizedBox(width: 16),
-                Text(
-                  isEditing ? "Edit Exercise" : "Add Exercise",
-                  style: const TextStyle(
-                    color: AppTheme.textPrimary,
-                    fontSize: 22,
-                    fontWeight: FontWeight.bold,
-                  ),
+                borderRadius: BorderRadius.only(
+                  bottomLeft: Radius.circular(28),
+                  bottomRight: Radius.circular(28),
                 ),
-              ],
-            ),
-          ),
-
-          const SizedBox(height: 24),
-
-          /// Category Card
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: Container(
-              padding: const EdgeInsets.all(18),
-              decoration: BoxDecoration(
-                color: AppTheme.surface,
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(color: AppTheme.border),
               ),
               child: Row(
                 children: [
-                  const CircleAvatar(
-                    radius: 24,
-                    backgroundColor: AppTheme.primaryRed,
-                    child: Icon(Icons.fitness_center,
-                        color: AppTheme.textPrimary),
-                  ),
-                  const SizedBox(width: 14),
-                  Text(
-                    widget.category.name,
-                    style: const TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w600,
-                      color: AppTheme.textPrimary,
+                  InkWell(
+                    onTap: () => Navigator.pop(context),
+                    child: const CircleAvatar(
+                      backgroundColor: Colors.white24,
+                      child: Icon(Icons.arrow_back, color: Colors.white),
                     ),
-                  )
+                  ),
+                  const SizedBox(width: 15),
+                  Text(
+                    isEditing ? "Edit Exercise" : "Add Exercise",
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 22,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
                 ],
               ),
             ),
-          ),
 
-          const SizedBox(height: 20),
+            Expanded(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.all(16),
+                child: Form(
+                  key: _formKey,
+                  child: Column(
+                    children: [
 
-          /// Form Area
-          Expanded(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.all(16),
-              child: Form(
-                key: _formKey,
-                child: Column(
-                  children: [
+                      /// NAME
+                      buildDarkField(
+                        controller: nameController,
+                        label: "Exercise Name",
+                        icon: Icons.edit,
+                        isRequired: true,
+                      ),
 
-                    buildDarkField(
-                      controller: nameController,
-                      label: "Exercise Name",
-                      icon: Icons.edit,
-                      isRequired: true,
-                    ),
+                      const SizedBox(height: 20),
 
-                    const SizedBox(height: 18),
-
-                    Row(
-                      children: [
-                        Expanded(
-                          child: buildDarkField(
-                            controller: setsController,
-                            label: "Sets",
-                            icon: Icons.repeat,
-                            keyboardType: TextInputType.number,
-                          ),
-                        ),
-                        const SizedBox(width: 14),
-                        Expanded(
-                          child: buildDarkField(
-                            controller: repsController,
-                            label: "Reps",
-                            icon: Icons.fitness_center,
-                            keyboardType: TextInputType.number,
-                          ),
-                        ),
-                      ],
-                    ),
-
-                    const SizedBox(height: 18),
-
-                    buildDarkField(
-                      controller: durationController,
-                      label: "Duration (sec)",
-                      icon: Icons.timer,
-                      keyboardType: TextInputType.number,
-                    ),
-
-                    const SizedBox(height: 18),
-
-                    buildDarkField(
-                      controller: notesController,
-                      label: "Notes",
-                      icon: Icons.note_alt_outlined,
-                      maxLines: 3,
-                    ),
-
-                    const SizedBox(height: 30),
-
-                    /// 🔥 Dark Red Gradient Button
-                    ScaleTransition(
-                      scale: _btnController,
-                      child: GestureDetector(
-                        onTapDown: (_) => _btnController.reverse(),
-                        onTapUp: (_) {
-                          _btnController.forward();
-                          _saveExercise();
-                        },
-                        child: Container(
-                          width: double.infinity,
-                          padding: const EdgeInsets.symmetric(vertical: 16),
-                          decoration: BoxDecoration(
-                            gradient: const LinearGradient(
-                              colors: [
-                                AppTheme.primaryRed,
-                                AppTheme.darkRed
+                      /// SETS
+                      Column(
+                        children: List.generate(weightControllers.length, (i) {
+                          return Container(
+                            margin: const EdgeInsets.only(bottom: 12),
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: AppTheme.surface,
+                              borderRadius: BorderRadius.circular(15),
+                              border: Border.all(color: AppTheme.border),
+                            ),
+                            child: Row(
+                              children: [
+                                Expanded(
+                                  child: buildDarkField(
+                                    controller: weightControllers[i],
+                                    label: "Weight",
+                                    icon: Icons.fitness_center,
+                                    keyboardType: TextInputType.number,
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                Expanded(
+                                  child: buildDarkField(
+                                    controller: repsControllers[i],
+                                    label: "Reps",
+                                    icon: Icons.repeat,
+                                    keyboardType: TextInputType.number,
+                                  ),
+                                ),
+                                IconButton(
+                                  icon: const Icon(Icons.delete, color: Colors.red),
+                                  onPressed: () => _removeSet(i),
+                                ),
                               ],
                             ),
-                            borderRadius: BorderRadius.circular(18),
-                          ),
-                          child: const Center(
-                            child: Text(
-                              "Save Exercise",
-                              style: TextStyle(
-                                color: AppTheme.textPrimary,
-                                fontSize: 17,
-                                fontWeight: FontWeight.bold,
-                              ),
+                          );
+                        }),
+                      ),
+
+                      const SizedBox(height: 10),
+
+                      /// ADD SET
+                      SizedBox(
+                        width: double.infinity,
+                        child: ElevatedButton.icon(
+                          onPressed: _addSet,
+                          icon: const Icon(Icons.add),
+                          label: const Text("Add Set"),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppTheme.primaryRed,
+                            padding: const EdgeInsets.symmetric(vertical: 14),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(14),
                             ),
                           ),
                         ),
                       ),
-                    )
-                  ],
+
+                      const SizedBox(height: 20),
+
+                      /// NOTES
+                      buildDarkField(
+                        controller: notesController,
+                        label: "Notes",
+                        icon: Icons.note,
+                        maxLines: 3,
+                      ),
+
+                      const SizedBox(height: 30),
+
+                      /// SAVE BUTTON
+                      SizedBox(
+                        width: double.infinity,
+                        child: ElevatedButton(
+                          onPressed: isSaving ? null : _saveExercise,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppTheme.primaryRed,
+                            padding: const EdgeInsets.symmetric(vertical: 16),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(18),
+                            ),
+                          ),
+                          child: isSaving
+                              ? const CircularProgressIndicator(color: Colors.white)
+                              : const Text(
+                                  "Save Exercise",
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 17,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                        ),
+                      ),
+
+                      const SizedBox(height: 30),
+                    ],
+                  ),
                 ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
-    ),
-  );
-}
-Widget buildDarkField({
-  required TextEditingController controller,
-  required String label,
-  required IconData icon,
-  TextInputType? keyboardType,
-  int maxLines = 1,
-  bool isRequired = false,
-}) {
-  return TextFormField(
-    controller: controller,
-    keyboardType: keyboardType,
-    maxLines: maxLines,
-    style: const TextStyle(color: AppTheme.textPrimary),
-    validator: isRequired
-        ? (value) =>
-            value == null || value.trim().isEmpty ? "Required field" : null
-        : null,
-    decoration: InputDecoration(
-      labelText: label,
-      labelStyle: const TextStyle(color: AppTheme.textSecondary),
-      prefixIcon: Icon(icon, color: AppTheme.primaryRed),
-      filled: true,
-      fillColor: AppTheme.surface,
-      contentPadding:
-          const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-      enabledBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(18),
-        borderSide: const BorderSide(color: AppTheme.border),
-      ),
-      focusedBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(18),
-        borderSide: const BorderSide(color: AppTheme.primaryRed),
-      ),
-    ),
-  );
-}
-  void _saveExercise() {
+    );
+  }
+
+  /// ================= SAVE LOGIC =================
+  Future<void> _saveExercise() async {
     if (!_formKey.currentState!.validate()) return;
 
-    final box = Hive.box<CategoryModel>('categories');
-    final categoryKey = widget.category.key;
+    setState(() => isSaving = true);
 
-    if (categoryKey == null) return;
+    try {
+      final box = Hive.box<CategoryModel>('categories');
+      final category = box.getAt(widget.categoryIndex);
+      if (category == null) return;
 
-    final currentCategory = box.get(categoryKey);
-    if (currentCategory == null) return;
+      /// Create Sets
+      List<ExerciseSet> sets = [];
+      for (int i = 0; i < weightControllers.length; i++) {
+        final weight = double.tryParse(weightControllers[i].text) ?? 0;
+        final reps = int.tryParse(repsControllers[i].text) ?? 0;
+        sets.add(ExerciseSet(weight: weight, reps: reps));
+      }
 
-    final exercise = Exercise(
-      id: widget.exercise?.id ?? const Uuid().v4(),
-      name: nameController.text.trim(),
-      sets: int.tryParse(setsController.text) ?? 0,
-      reps: int.tryParse(repsController.text) ?? 0,
-      duration: int.tryParse(durationController.text) ?? 0,
-      notes: notesController.text.trim(),
-    );
+      /// Create Exercise
+      final newExercise = Exercise(
+        id: widget.exercise?.id ?? const Uuid().v4(),
+        name: nameController.text.trim(),
+        sets: sets,
+        duration: 0, // duration removed per client request
+        notes: notesController.text.trim(),
+      );
 
-    List<Exercise> updatedExercises =
-        List<Exercise>.from(currentCategory.exercises);
+      List<Exercise> updatedExercises = List<Exercise>.from(category.exercises);
+      if (widget.exercise != null) {
+        updatedExercises.removeWhere((e) => e.id == widget.exercise!.id);
+      }
+      updatedExercises.add(newExercise);
+      category.exercises = updatedExercises;
 
-    if (widget.exercise != null) {
-      updatedExercises.removeWhere((e) => e.id == widget.exercise!.id);
+      /// SAVE
+      await box.putAt(widget.categoryIndex, category);
+
+      /// POP BACK
+      if (mounted) Navigator.pop(context, true);
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Error: $e")),
+      );
     }
 
-    updatedExercises.add(exercise);
+    setState(() => isSaving = false);
+  }
 
-    final updatedCategory =
-        currentCategory.copyWith(exercises: updatedExercises);
-
-    box.put(categoryKey, updatedCategory);
-
-    if (mounted) Navigator.pop(context, true);
+  /// ================= FIELD BUILDER =================
+  Widget buildDarkField({
+    required TextEditingController controller,
+    required String label,
+    required IconData icon,
+    TextInputType? keyboardType,
+    int maxLines = 1,
+    bool isRequired = false,
+  }) {
+    return TextFormField(
+      controller: controller,
+      keyboardType: keyboardType,
+      maxLines: maxLines,
+      style: const TextStyle(color: Colors.white),
+      validator: isRequired
+          ? (v) => v == null || v.trim().isEmpty ? "Required" : null
+          : null,
+      decoration: InputDecoration(
+        labelText: label,
+        labelStyle: const TextStyle(color: Colors.grey),
+        prefixIcon: Icon(icon, color: AppTheme.primaryRed),
+        filled: true,
+        fillColor: AppTheme.surface,
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(15),
+          borderSide: const BorderSide(color: AppTheme.border),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(15),
+          borderSide: const BorderSide(color: AppTheme.primaryRed),
+        ),
+      ),
+    );
   }
 }

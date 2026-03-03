@@ -19,18 +19,17 @@ class ExerciseAdapter extends TypeAdapter<Exercise> {
     return Exercise(
       id: fields[0] as String,
       name: fields[1] as String,
-      sets: fields[2] as int,
-      reps: fields[3] as int,
-      duration: fields[4] as int,
-      notes: fields[5] as String,
-      completed: fields[6] as bool,
+      sets: (fields[2] as List).cast<ExerciseSet>(),
+      duration: fields[3] as int,
+      notes: fields[4] as String,
+      completed: fields[5] as bool,
     );
   }
 
   @override
   void write(BinaryWriter writer, Exercise obj) {
     writer
-      ..writeByte(7)
+      ..writeByte(6)
       ..writeByte(0)
       ..write(obj.id)
       ..writeByte(1)
@@ -38,12 +37,10 @@ class ExerciseAdapter extends TypeAdapter<Exercise> {
       ..writeByte(2)
       ..write(obj.sets)
       ..writeByte(3)
-      ..write(obj.reps)
-      ..writeByte(4)
       ..write(obj.duration)
-      ..writeByte(5)
+      ..writeByte(4)
       ..write(obj.notes)
-      ..writeByte(6)
+      ..writeByte(5)
       ..write(obj.completed);
   }
 
